@@ -17,7 +17,7 @@ export default function SignInForm() {
     e.preventDefault();
 
     try {
-    const res = await fetch("http://localhost:8000/api/auth/login", {
+    const res = await fetch("http://localhost:8080/api/auth/login", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ email, password }),
@@ -29,7 +29,7 @@ export default function SignInForm() {
     console.log("✅ Login Success");
 
     // Redirect after successful login
-    window.location.href = "/dashboard";
+    window.location.href = "/";
   } catch (err) {
     console.error("❌ Login Failed:", err);
     alert("Login failed. Please check your credentials.");

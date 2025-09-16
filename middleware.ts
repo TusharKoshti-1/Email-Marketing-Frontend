@@ -54,7 +54,7 @@ export function middleware(req: NextRequest) {
 export const config = {
   matcher: [
     // More specific: Cover dashboard and admin explicitly
-    '/dashboard/:path*',
+    '/:path*',
     '/admin/:path*',
     '/((?!_next/static|_next/image|favicon.ico|api|signin|signup|reset-password).*)',
   ],
