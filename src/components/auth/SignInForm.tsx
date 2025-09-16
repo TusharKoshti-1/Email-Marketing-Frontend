@@ -5,11 +5,11 @@ import Label from "@/components/form/Label";
 import Button from "@/components/ui/button/Button";
 import { ChevronLeftIcon, EyeCloseIcon, EyeIcon } from "@/icons";
 import Link from "next/link";
-import React, { useState, ChangeEvent, FormEvent } from "react";
+import React, { useState, ChangeEvent, FormEvent, useEffect } from "react";
 
 export default function SignInForm() {
   const [showPassword, setShowPassword] = useState(false);
-  const [isChecked, setIsChecked] = useState(false);
+  const [isChecked, setIsChecked] = useState(false); // Keep me logged in
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
@@ -17,24 +17,52 @@ export default function SignInForm() {
     e.preventDefault();
 
     try {
-    const res = await fetch("http://localhost:8080/api/auth/login", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email, password }),
-      credentials: "include", // IMPORTANT: allow cookies
-    });
+      const res = await fetch("http://localhost:8080/api/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password }),
+        credentials: "include", // ✅ Important for cookies
+      });
 
-    if (!res.ok) throw new Error("Invalid credentials");
+      if (!res.ok) throw new Error("Invalid credentials");
 
-    console.log("✅ Login Success");
 
-    // Redirect after successful login
-    window.location.href = "/";
-  } catch (err) {
-    console.error("❌ Login Failed:", err);
-    alert("Login failed. Please check your credentials.");
-  }
-};
+      if (isChecked) {
+        localStorage.setItem("keepMeLoggedIn", "true");
+      } else {
+        localStorage.removeItem("keepMeLoggedIn");
+      }
+
+      window.location.href = "/";
+    } catch (err) {
+      console.error("❌ Login Failed:", err);
+      alert("Login failed. Please check your credentials.");
+    }
+  };
+
+  // ✅ Auto-refresh token if "Keep me logged in" is set
+  useEffect(() => {
+    const keepMe = localStorage.getItem("keepMeLoggedIn");
+    if (!keepMe) return;
+
+    const interval = setInterval(async () => {
+      try {
+        const res = await fetch("http://localhost:8080/api/auth/refresh", {
+          method: "POST",
+          credentials: "include",
+        });
+        if (res.ok) {
+          console.log("🔄 Token refreshed");
+        } else {
+          console.warn("⚠ Failed to refresh token");
+        }
+      } catch (err) {
+        console.error("❌ Refresh token error", err);
+      }
+    }, 1000 * 60 * 14); // every 14 mins
+
+    return () => clearInterval(interval);
+  }, []);
 
   return (
     <div className="flex flex-col flex-1 lg:w-1/2 w-full">
@@ -61,9 +89,7 @@ export default function SignInForm() {
           <form onSubmit={handleSubmit}>
             <div className="space-y-6">
               <div>
-                <Label>
-                  Email <span className="text-error-500">*</span>
-                </Label>
+                <Label>Email <span className="text-error-500">*</span></Label>
                 <Input
                   placeholder="info@gmail.com"
                   type="email"
@@ -72,14 +98,12 @@ export default function SignInForm() {
                     setEmail(e.target.value)
                   }
                   required
-                  {...({} as any)} // Type assertion to bypass TS2322
+                  {...({} as any)}
                 />
               </div>
 
               <div>
-                <Label>
-                  Password <span className="text-error-500">*</span>
-                </Label>
+                <Label>Password <span className="text-error-500">*</span></Label>
                 <div className="relative">
                   <Input
                     type={showPassword ? "text" : "password"}
@@ -89,7 +113,7 @@ export default function SignInForm() {
                       setPassword(e.target.value)
                     }
                     required
-                    {...({} as any)} // Type assertion to bypass TS2322
+                    {...({} as any)}
                   />
                   <span
                     onClick={() => setShowPassword(!showPassword)}
@@ -123,7 +147,7 @@ export default function SignInForm() {
                 <Button
                   className="w-full"
                   size="sm"
-                  {...({ type: "submit" } as any)} // Type assertion to bypass TS2322
+                  {...({ type: "submit" } as any)}
                 >
                   Sign in
                 </Button>
