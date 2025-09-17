@@ -28,6 +28,7 @@ function toggleDropdown(e: React.MouseEvent<HTMLButtonElement, MouseEvent>) {
 
       // redirect to signin
       router.push("/signin");
+      localStorage.removeItem("keepMeLoggedIn");
     } catch (err) {
       console.error("Logout failed:", err);
     }

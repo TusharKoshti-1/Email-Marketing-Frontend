@@ -1,47 +1,35 @@
 "use client";
 import { useEffect } from "react";
-import { useRouter } from "next/navigation";
 
-export default function TokenRefresher({ isValid }: { isValid: boolean }) {
-  const router = useRouter();
-
+export default function GlobalTokenRefresher() {
   useEffect(() => {
-    if (isValid) return; // token already fine
-
     const keepMe = localStorage.getItem("keepMeLoggedIn");
+    if (!keepMe) return;
 
-    if (!keepMe) {
-      // ❌ no keepMe → go to signin
-      router.replace("/signin");
-      return;
-    }
-
-    // ✅ keepMe exists → try refresh
     const refresh = async () => {
       try {
         const res = await fetch("http://localhost:8080/api/auth/refresh", {
           method: "POST",
-          credentials: "include",
+          credentials: "include", // ✅ Send cookies
         });
 
         if (res.ok) {
-          console.log("✅ Token refreshed");
-          router.refresh();
         } else {
           console.warn("⚠ Failed to refresh token");
-          router.replace("/signin");
         }
       } catch (err) {
         console.error("❌ Refresh token error", err);
-        router.replace("/signin");
       }
     };
 
+    // Refresh immediately on mount (optional)
     refresh();
 
+    // Then refresh every 14 minutes (before 15m expiry)
     const interval = setInterval(refresh, 1000 * 60 * 14);
-    return () => clearInterval(interval);
-  }, [isValid, router]);
 
-  return null;
+    return () => clearInterval(interval);
+  }, []);
+
+  return null; // no UI
 }
