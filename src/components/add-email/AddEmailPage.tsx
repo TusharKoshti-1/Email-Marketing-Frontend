@@ -14,7 +14,7 @@ interface Domain {
   verified: boolean;
 }
 
-export default function SenderPage() {
+export default function AddEmailPage() {
   const { isOpen, openModal, closeModal } = useModal();
   const [domains, setDomains] = useState<Domain[]>([
     { name: "example.com", verified: true },

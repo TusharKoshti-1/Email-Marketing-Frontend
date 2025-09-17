@@ -43,6 +43,11 @@ const navItems: NavItem[] = [
   },
   {
     icon: <UserCircleIcon />,
+    name: "Add Email",
+    path: "/add-email",
+  },
+  {
+    icon: <UserCircleIcon />,
     name: "Api keys",
     path: "/api-keys",
   },

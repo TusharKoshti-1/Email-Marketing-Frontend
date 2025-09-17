@@ -1,7 +1,7 @@
 import PageBreadcrumb from "@/components/common/PageBreadCrumb";
 import { Metadata } from "next";
 import React from "react";
-import SenderPage from "@/components/sender/SenderPage";
+import SenderPage from "@/components/add-email/AddEmailPage";
 
 
 export const metadata: Metadata = {
