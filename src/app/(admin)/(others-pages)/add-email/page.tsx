@@ -1,7 +1,8 @@
 import PageBreadcrumb from "@/components/common/PageBreadCrumb";
 import { Metadata } from "next";
 import React from "react";
-import SenderPage from "@/components/add-email/AddEmailPage";
+import AddEmailPage from "@/components/add-email/AddEmailPage";
+import { cookies } from "next/headers";
 
 
 export const metadata: Metadata = {
@@ -9,11 +10,13 @@ export const metadata: Metadata = {
   description: "This is Next.js Blank Page TailAdmin Dashboard Template",
 };
 
-export default function Sender() {
+export default async function Sender() {
+    const cookieStore = await cookies();
+    const token = cookieStore.get("token")?.value;
   return (
     <div>
       <PageBreadcrumb pageTitle="Sender" />
-      <SenderPage />      
+      <AddEmailPage token={token} />      
     </div>
   );
 }

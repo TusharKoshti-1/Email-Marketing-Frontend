@@ -1,5 +1,5 @@
 "use client";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useModal } from "../../hooks/useModal";
 import { Modal } from "../ui/modal";
 import Button from "../ui/button/Button";
@@ -10,47 +10,174 @@ import { DropdownItem } from "../ui/dropdown/DropdownItem";
 import { ChevronDownIcon } from "../../icons";
 
 interface Domain {
+  id: number;
   name: string;
   verified: boolean;
+  userId: number;
 }
 
-export default function AddEmailPage() {
-  const { isOpen, openModal, closeModal } = useModal();
-  const [domains, setDomains] = useState<Domain[]>([
-    { name: "example.com", verified: true },
-    { name: "marketing.io", verified: false },
-  ]);
-  const [newDomain, setNewDomain] = useState("");
-  const [openDropdown, setOpenDropdown] = useState<number | null>(null);
+interface AddEmailPageProps {
+  token: string | undefined;
+}
 
-  const handleAddDomain = () => {
-    if (newDomain && !domains.find((d) => d.name === newDomain)) {
-      setDomains([...domains, { name: newDomain, verified: false }]);
-      setNewDomain("");
-      closeModal();
+export default function AddEmailPage({ token }: AddEmailPageProps) {
+  const { isOpen, openModal, closeModal } = useModal();
+  const [domains, setDomains] = useState<Domain[]>([]);
+  const [newDomain, setNewDomain] = useState("");
+  const [editingDomain, setEditingDomain] = useState<Domain | null>(null);
+  const [openDropdown, setOpenDropdown] = useState<number | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  const headers = {
+    Authorization: `Bearer ${token}`,
+    "Content-Type": "application/json",
+  };
+
+  // Fetch domains on mount
+  useEffect(() => {
+    if (!token) {
+      setError("Please log in to view domains");
+      return;
+    }
+    fetchDomains();
+  }, [token]);
+
+  const fetchDomains = async () => {
+    try {
+      const res = await fetch("http://localhost:8080/api/domains", { headers });
+      if (!res.ok) {
+        if (res.status === 401) throw new Error("Unauthorized: Please log in again");
+        const errorData = await res.json();
+        throw new Error(errorData.message || "Failed to fetch domains");
+      }
+      const data = await res.json();
+      setDomains(data);
+      setError(null);
+    } catch (err: any) {
+      setError(err.message);
     }
   };
 
-  const handleDelete = (index: number) => {
-    setDomains(domains.filter((_, i) => i !== index));
-    setOpenDropdown(null);
+  const handleAddDomain = async () => {
+    if (!token) {
+      setError("Please log in to add a domain");
+      return;
+    }
+    if (newDomain && !domains.find((d) => d.name === newDomain)) {
+      try {
+        const res = await fetch("http://localhost:8080/api/domains", {
+          method: "POST",
+          headers,
+          body: JSON.stringify({ name: newDomain }),
+        });
+        if (!res.ok) {
+          if (res.status === 401) throw new Error("Unauthorized: Please log in again");
+          const errorData = await res.json();
+          throw new Error(errorData.message || "Failed to create domain");
+        }
+        const domain = await res.json();
+        setDomains([...domains, domain]);
+        setNewDomain("");
+        setError(null);
+        closeModal();
+      } catch (err: any) {
+        setError(err.message);
+      }
+    }
+  };
+
+  const handleEditSubmit = async () => {
+    if (!token) {
+      setError("Please log in to edit a domain");
+      return;
+    }
+    if (!editingDomain || !newDomain) {
+      setError("No domain selected or empty domain name");
+      return;
+    }
+    try {
+      const res = await fetch(`http://localhost:8080/api/domains/${editingDomain.id}`, {
+        method: "PUT",
+        headers,
+        body: JSON.stringify({ name: newDomain }),
+      });
+      if (!res.ok) {
+        if (res.status === 401) throw new Error("Unauthorized: Please log in again");
+        const errorData = await res.json();
+        throw new Error(errorData.message || "Failed to update domain");
+      }
+      const updatedDomain = await res.json();
+      setDomains(domains.map((d) => (d.id === editingDomain.id ? updatedDomain : d)));
+      setNewDomain("");
+      setEditingDomain(null);
+      setError(null);
+      closeModal();
+    } catch (err: any) {
+      setError(err.message);
+    }
   };
 
   const handleEdit = (index: number) => {
     const domain = domains[index];
+    setEditingDomain(domain);
     setNewDomain(domain.name);
-    setDomains(domains.filter((_, i) => i !== index));
     openModal();
     setOpenDropdown(null);
   };
 
-  const handleToggleVerify = (index: number) => {
-    setDomains((prev) =>
-      prev.map((d, i) =>
-        i === index ? { ...d, verified: !d.verified } : d
-      )
-    );
-    setOpenDropdown(null);
+  const handleDelete = async (index: number) => {
+    if (!token) {
+      setError("Please log in to delete a domain");
+      return;
+    }
+    const domain = domains[index];
+    try {
+      const res = await fetch(`http://localhost:8080/api/domains/${domain.id}`, {
+        method: "DELETE",
+        headers,
+      });
+      if (!res.ok) {
+        if (res.status === 401) throw new Error("Unauthorized: Please log in again");
+        const errorData = await res.json();
+        throw new Error(errorData.message || "Failed to delete domain");
+      }
+      setDomains(domains.filter((_, i) => i !== index));
+      setError(null);
+      setOpenDropdown(null);
+    } catch (err: any) {
+      setError(err.message);
+    }
+  };
+
+  const handleToggleVerify = async (index: number) => {
+    if (!token) {
+      setError("Please log in to verify a domain");
+      return;
+    }
+    const domain = domains[index];
+    try {
+      const res = await fetch(`http://localhost:8080/api/domains/${domain.id}/verify`, {
+        method: "PATCH",
+        headers,
+      });
+      if (!res.ok) {
+        if (res.status === 401) throw new Error("Unauthorized: Please log in again");
+        const errorData = await res.json();
+        throw new Error(errorData.message || "Failed to toggle verification");
+      }
+      const updatedDomain = await res.json();
+      setDomains(domains.map((d, i) => (i === index ? updatedDomain : d)));
+      setError(null);
+      setOpenDropdown(null);
+    } catch (err: any) {
+      setError(err.message);
+    }
+  };
+
+  const handleModalClose = () => {
+    setNewDomain("");
+    setEditingDomain(null);
+    closeModal();
   };
 
   return (
@@ -63,6 +190,10 @@ export default function AddEmailPage() {
             </h3>
             <Button onClick={openModal}>+ Add Domain</Button>
           </div>
+
+          {error && (
+            <div className="text-red-600 dark:text-red-400">{error}</div>
+          )}
 
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {domains.map((domain, index) => (
@@ -84,7 +215,6 @@ export default function AddEmailPage() {
                   </span>
                 </div>
 
-                {/* Dropdown */}
                 {/* Dropdown */}
                 <div className="relative">
                   <button
@@ -120,27 +250,28 @@ export default function AddEmailPage() {
                     </DropdownItem>
                   </Dropdown>
                 </div>
-
               </div>
             ))}
           </div>
         </div>
       </div>
 
-      {/* Add Domain Modal */}
-      <Modal isOpen={isOpen} onClose={closeModal} className="max-w-[500px] m-4">
+      {/* Add/Edit Domain Modal */}
+      <Modal isOpen={isOpen} onClose={handleModalClose} className="max-w-[500px] m-4">
         <div className="no-scrollbar relative w-full max-w-[500px] rounded-3xl bg-white p-6 dark:bg-gray-900">
           <h4 className="mb-2 text-2xl font-semibold text-gray-800 dark:text-white/90">
-            Add New Domain
+            {editingDomain ? "Edit Domain" : "Add New Domain"}
           </h4>
           <p className="mb-6 text-sm text-gray-500 dark:text-gray-400">
-            Enter the email domain you want to use for sending campaigns.
+            {editingDomain
+              ? "Edit the email domain for sending campaigns."
+              : "Enter the email domain you want to use for sending campaigns."}
           </p>
 
           <form
             onSubmit={(e) => {
               e.preventDefault();
-              handleAddDomain();
+              editingDomain ? handleEditSubmit() : handleAddDomain();
             }}
           >
             <div className="mb-5">
@@ -153,11 +284,11 @@ export default function AddEmailPage() {
               />
             </div>
             <div className="flex items-center gap-3 justify-end">
-              <Button size="sm" variant="outline" onClick={closeModal}>
+              <Button size="sm" variant="outline" onClick={handleModalClose}>
                 Cancel
               </Button>
-              <Button size="sm" onClick={handleAddDomain}>
-                Add Domain
+              <Button size="sm" type="submit">
+                {editingDomain ? "Save Changes" : "Add Domain"}
               </Button>
             </div>
           </form>

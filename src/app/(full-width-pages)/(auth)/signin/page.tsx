@@ -1,33 +1,29 @@
 // src/app/(full-width-pages)/(auth)/signin/page.tsx
-"use client";
-
 import SignInForm from "@/components/auth/SignInForm";
 import { Metadata } from "next";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import jwt from "jsonwebtoken";
-import TokenRefresher from "@/components/auth/TokenRefresher";
+import TokenRefresher from "@/components/auth/TokenRefresher"; // ✅ safe: render inside JSX, not top-level
 
 export const metadata: Metadata = {
   title: "Next.js SignIn Page | TailAdmin - Next.js Dashboard Template",
   description: "This is Next.js Signin Page TailAdmin Dashboard Template",
 };
 
-// ⬅️ Note: default export must remain async since we read cookies server-side
 export default async function SignInPage() {
   const cookieStore = await cookies();
   const token = cookieStore.get("token")?.value;
-  const secret = process.env.JWT_SECRET || "replace_this_with_a_strong_secret";
-
   let isValid = false;
 
   if (token) {
+    const secret = process.env.JWT_SECRET || "replace_this_with_a_strong_secret";
     try {
       jwt.verify(token, secret);
       console.log("✅ Valid token detected, redirecting to /");
-      redirect("/"); // stops here if valid
-    } catch {
-      console.log("❌ Invalid token, will attempt refresh with TokenRefresher");
+      redirect("/");
+    } catch (err) {
+      console.warn("⚠ Invalid token, trying refresh flow");
     }
   } else {
     console.log("No token found, staying on SignIn page.");
@@ -35,8 +31,10 @@ export default async function SignInPage() {
 
   return (
     <>
+      {/* Server always renders SignInForm */}
       <SignInForm />
-      {/* If token invalid or missing → try refresher */}
+
+      {/* Client handles refresh logic if token is invalid */}
       <TokenRefresher isValid={isValid} />
     </>
   );
