@@ -17,7 +17,7 @@ export default function SignInForm() {
     e.preventDefault();
 
     try {
-      const res = await fetch("http://localhost:8080/api/auth/login", {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/auth/login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, password }),
@@ -25,7 +25,6 @@ export default function SignInForm() {
       });
 
       if (!res.ok) throw new Error("Invalid credentials");
-
 
       if (isChecked) {
         localStorage.setItem("keepMeLoggedIn", "true");
@@ -47,7 +46,7 @@ export default function SignInForm() {
 
     const interval = setInterval(async () => {
       try {
-        const res = await fetch("http://localhost:8080/api/auth/refresh", {
+        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/auth/refresh`, {
           method: "POST",
           credentials: "include",
         });
@@ -93,12 +92,10 @@ export default function SignInForm() {
                 <Input
                   placeholder="info@gmail.com"
                   type="email"
-                  value={email}
+                  defaultValue={email}
                   onChange={(e: ChangeEvent<HTMLInputElement>) =>
                     setEmail(e.target.value)
                   }
-                  required
-                  {...({} as any)}
                 />
               </div>
 
@@ -108,12 +105,10 @@ export default function SignInForm() {
                   <Input
                     type={showPassword ? "text" : "password"}
                     placeholder="Enter your password"
-                    value={password}
+                    defaultValue={password}
                     onChange={(e: ChangeEvent<HTMLInputElement>) =>
                       setPassword(e.target.value)
                     }
-                    required
-                    {...({} as any)}
                   />
                   <span
                     onClick={() => setShowPassword(!showPassword)}
@@ -147,7 +142,7 @@ export default function SignInForm() {
                 <Button
                   className="w-full"
                   size="sm"
-                  {...({ type: "submit" } as any)}
+                  type="submit"
                 >
                   Sign in
                 </Button>
@@ -157,7 +152,7 @@ export default function SignInForm() {
 
           <div className="mt-5">
             <p className="text-sm font-normal text-center text-gray-700 dark:text-gray-400 sm:text-start">
-              Don&apos;t have an account?{" "}
+              Dont have an account?{" "}
               <Link
                 href="/signup"
                 className="text-brand-500 hover:text-brand-600 dark:text-brand-400"

@@ -8,7 +8,7 @@ export default function GlobalTokenRefresher() {
 
     const refresh = async () => {
       try {
-        const res = await fetch("http://localhost:8080/api/auth/refresh", {
+        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/auth/refresh`, {
           method: "POST",
           credentials: "include", // ✅ Send cookies
         });

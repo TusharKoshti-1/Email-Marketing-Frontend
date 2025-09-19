@@ -14,7 +14,7 @@ export const metadata: Metadata = {
 export default async function SignInPage() {
   const cookieStore = await cookies();
   const token = cookieStore.get("token")?.value;
-  let isValid = false;
+  const isValid = false;
 
   if (token) {
     const secret = process.env.JWT_SECRET || "replace_this_with_a_strong_secret";
@@ -22,7 +22,7 @@ export default async function SignInPage() {
       jwt.verify(token, secret);
       console.log("✅ Valid token detected, redirecting to /");
       redirect("/");
-    } catch (err) {
+    } catch {
       console.warn("⚠ Invalid token, trying refresh flow");
     }
   } else {

@@ -1,5 +1,5 @@
 "use client";
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback, useMemo, ChangeEvent } from "react";
 import { useModal } from "../../hooks/useModal";
 import { Modal } from "../ui/modal";
 import Button from "../ui/button/Button";
@@ -28,23 +28,19 @@ export default function AddEmailPage({ token }: AddEmailPageProps) {
   const [openDropdown, setOpenDropdown] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  const headers = {
-    Authorization: `Bearer ${token}`,
-    "Content-Type": "application/json",
-  };
+  // Memoize headers to stabilize useCallback dependency
+  const headers = useMemo(
+    () => ({
+      Authorization: `Bearer ${token}`,
+      "Content-Type": "application/json",
+    }),
+    [token]
+  );
 
-  // Fetch domains on mount
-  useEffect(() => {
-    if (!token) {
-      setError("Please log in to view domains");
-      return;
-    }
-    fetchDomains();
-  }, [token]);
-
-  const fetchDomains = async () => {
+  // Define fetchDomains with useCallback
+  const fetchDomains = useCallback(async () => {
     try {
-      const res = await fetch("http://localhost:8080/api/domains", { headers });
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/domains`, { headers });
       if (!res.ok) {
         if (res.status === 401) throw new Error("Unauthorized: Please log in again");
         const errorData = await res.json();
@@ -53,10 +49,19 @@ export default function AddEmailPage({ token }: AddEmailPageProps) {
       const data = await res.json();
       setDomains(data);
       setError(null);
-    } catch (err: any) {
-      setError(err.message);
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "An unknown error occurred");
     }
-  };
+  }, [headers]);
+
+  // Fetch domains on mount
+  useEffect(() => {
+    if (!token) {
+      setError("Please log in to view domains");
+      return;
+    }
+    fetchDomains();
+  }, [token, fetchDomains]);
 
   const handleAddDomain = async () => {
     if (!token) {
@@ -65,7 +70,7 @@ export default function AddEmailPage({ token }: AddEmailPageProps) {
     }
     if (newDomain && !domains.find((d) => d.name === newDomain)) {
       try {
-        const res = await fetch("http://localhost:8080/api/domains", {
+        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/domains`, {
           method: "POST",
           headers,
           body: JSON.stringify({ name: newDomain }),
@@ -80,8 +85,8 @@ export default function AddEmailPage({ token }: AddEmailPageProps) {
         setNewDomain("");
         setError(null);
         closeModal();
-      } catch (err: any) {
-        setError(err.message);
+      } catch (err: unknown) {
+        setError(err instanceof Error ? err.message : "An unknown error occurred");
       }
     }
   };
@@ -96,7 +101,7 @@ export default function AddEmailPage({ token }: AddEmailPageProps) {
       return;
     }
     try {
-      const res = await fetch(`http://localhost:8080/api/domains/${editingDomain.id}`, {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/domains/${editingDomain.id}`, {
         method: "PUT",
         headers,
         body: JSON.stringify({ name: newDomain }),
@@ -112,8 +117,8 @@ export default function AddEmailPage({ token }: AddEmailPageProps) {
       setEditingDomain(null);
       setError(null);
       closeModal();
-    } catch (err: any) {
-      setError(err.message);
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "An unknown error occurred");
     }
   };
 
@@ -132,7 +137,7 @@ export default function AddEmailPage({ token }: AddEmailPageProps) {
     }
     const domain = domains[index];
     try {
-      const res = await fetch(`http://localhost:8080/api/domains/${domain.id}`, {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/domains/${domain.id}`, {
         method: "DELETE",
         headers,
       });
@@ -144,8 +149,8 @@ export default function AddEmailPage({ token }: AddEmailPageProps) {
       setDomains(domains.filter((_, i) => i !== index));
       setError(null);
       setOpenDropdown(null);
-    } catch (err: any) {
-      setError(err.message);
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "An unknown error occurred");
     }
   };
 
@@ -156,7 +161,7 @@ export default function AddEmailPage({ token }: AddEmailPageProps) {
     }
     const domain = domains[index];
     try {
-      const res = await fetch(`http://localhost:8080/api/domains/${domain.id}/verify`, {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/domains/${domain.id}/verify`, {
         method: "PATCH",
         headers,
       });
@@ -169,8 +174,8 @@ export default function AddEmailPage({ token }: AddEmailPageProps) {
       setDomains(domains.map((d, i) => (i === index ? updatedDomain : d)));
       setError(null);
       setOpenDropdown(null);
-    } catch (err: any) {
-      setError(err.message);
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "An unknown error occurred");
     }
   };
 
@@ -209,7 +214,7 @@ export default function AddEmailPage({ token }: AddEmailPageProps) {
                     className={`px-2 py-1 text-xs font-medium rounded-full ${domain.verified
                       ? "bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300"
                       : "bg-yellow-100 text-yellow-700 dark:bg-yellow-900 dark:text-yellow-300"
-                      }`}
+                    }`}
                   >
                     {domain.verified ? "Verified" : "Pending"}
                   </span>
@@ -271,7 +276,11 @@ export default function AddEmailPage({ token }: AddEmailPageProps) {
           <form
             onSubmit={(e) => {
               e.preventDefault();
-              editingDomain ? handleEditSubmit() : handleAddDomain();
+              if (editingDomain) {
+                handleEditSubmit();
+              } else {
+                handleAddDomain();
+              }
             }}
           >
             <div className="mb-5">
@@ -280,7 +289,7 @@ export default function AddEmailPage({ token }: AddEmailPageProps) {
                 type="text"
                 placeholder="Enter domain name"
                 defaultValue={newDomain}
-                onChange={(e) => setNewDomain(e.target.value)}
+                onChange={(e: ChangeEvent<HTMLInputElement>) => setNewDomain(e.target.value)}
               />
             </div>
             <div className="flex items-center gap-3 justify-end">
