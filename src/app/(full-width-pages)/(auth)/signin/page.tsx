@@ -1,10 +1,9 @@
-// src/app/(full-width-pages)/(auth)/signin/page.tsx
 import SignInForm from "@/components/auth/SignInForm";
 import { Metadata } from "next";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import jwt from "jsonwebtoken";
-import TokenRefresher from "@/components/auth/TokenRefresher"; // ✅ safe: render inside JSX, not top-level
+import TokenRefresher from "@/components/auth/TokenRefresher";
 
 export const metadata: Metadata = {
   title: "Next.js SignIn Page | TailAdmin - Next.js Dashboard Template",
@@ -17,8 +16,11 @@ export default async function SignInPage() {
   const isValid = false;
 
   if (token) {
-    const secret = process.env.JWT_SECRET || "replace_this_with_a_strong_secret";
     try {
+      const secret = process.env.JWT_SECRET;
+      if (!secret) {
+        throw new Error("JWT_SECRET is not defined in environment variables");
+      }
       jwt.verify(token, secret);
       console.log("✅ Valid token detected, redirecting to /");
       redirect("/");
@@ -31,10 +33,7 @@ export default async function SignInPage() {
 
   return (
     <>
-      {/* Server always renders SignInForm */}
       <SignInForm />
-
-      {/* Client handles refresh logic if token is invalid */}
       <TokenRefresher isValid={isValid} />
     </>
   );

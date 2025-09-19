@@ -1,4 +1,3 @@
-// app/(admin)/layout.tsx
 import { ReactNode } from "react";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
@@ -15,19 +14,21 @@ export default async function AdminLayout({ children }: { children: ReactNode })
 
   if (token) {
     try {
-      jwt.verify(token, process.env.JWT_SECRET || "your_jwt_secret");
+      const secret = process.env.JWT_SECRET;
+      if (!secret) {
+        throw new Error("JWT_SECRET is not defined in environment variables");
+      }
+      jwt.verify(token, secret);
       isValid = true;
     } catch (err) {
       console.log("[AdminLayout] Invalid/expired token:", err);
     }
   }
 
-  // If no token at all → straight to signin
   if (!token) {
     return redirect("/signin");
   }
 
-  // Render layout either way, but pass validity flag
   return (
     <ClientAdminLayout>
       <TokenRefresher isValid={isValid} />
