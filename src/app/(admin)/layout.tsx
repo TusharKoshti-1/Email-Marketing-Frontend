@@ -8,6 +8,7 @@ import TokenRefresher from "@/components/auth/TokenRefresher";
 export default async function AdminLayout({ children }: { children: ReactNode }) {
   const cookieStore = await cookies();
   const token = cookieStore.get("token")?.value;
+  console.log("[AdminLayout] token:", token);
 
   let isValid = false;
 
