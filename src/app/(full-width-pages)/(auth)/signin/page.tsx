@@ -1,9 +1,9 @@
+// src/app/(full-width-pages)/(auth)/signin/page.tsx
 import SignInForm from "@/components/auth/SignInForm";
 import { Metadata } from "next";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import jwt from "jsonwebtoken";
-import TokenRefresher from "@/components/auth/TokenRefresher";
 
 export const metadata: Metadata = {
   title: "Next.js SignIn Page | TailAdmin - Next.js Dashboard Template",
@@ -11,31 +11,19 @@ export const metadata: Metadata = {
 };
 
 export default async function SignInPage() {
+  // Read cookies on server
   const cookieStore = await cookies();
   const token = cookieStore.get("token")?.value;
-  const isValid = false;
-  console.log("SignInPage - token:", token);
+  console.log("Token on server-side SignInPage:", token);
 
   if (token) {
-    try {
-      const secret = process.env.JWT_SECRET;
-      if (!secret) {
-        throw new Error("JWT_SECRET is not defined in environment variables");
-      }
-      jwt.verify(token, secret);
-      console.log("✅ Valid token detected, redirecting to /");
-      redirect("/");
-    } catch {
-      console.warn("⚠ Invalid token, trying refresh flow");
-    }
+    const secret = process.env.JWT_SECRET || "replace_this_with_a_strong_secret";
+    jwt.verify(token, secret); // ❌ Do not wrap in try/catch for redirect
+    console.log("✅ Valid token detected, redirecting to /");
+    redirect("/"); // Server-side redirect, stops rendering
   } else {
     console.log("No token found, staying on SignIn page.");
   }
 
-  return (
-    <>
-      <SignInForm />
-      <TokenRefresher isValid={isValid} />
-    </>
-  );
+  return <SignInForm />;
 }
