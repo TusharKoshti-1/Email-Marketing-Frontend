@@ -33,6 +33,7 @@ export default function SignInForm() {
       }
 
       window.location.href = "/";
+      console.log("✅ Login successful, redirecting to /");
     } catch (err) {
       console.error("❌ Login Failed:", err);
       alert("Login failed. Please check your credentials.");

@@ -4,7 +4,9 @@ import { useEffect } from "react";
 export default function GlobalTokenRefresher() {
   useEffect(() => {
     const keepMe = localStorage.getItem("keepMeLoggedIn");
+    console.log("GlobalTokenRefresher - keepMeLoggedIn:", keepMe);
     if (!keepMe) return;
+    console.log("GlobalTokenRefresher - Setting up token refresh");
 
     const refresh = async () => {
       try {

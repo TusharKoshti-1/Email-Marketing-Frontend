@@ -1,6 +1,5 @@
 import { ReactNode } from "react";
 import { cookies } from "next/headers";
-import { redirect } from "next/navigation";
 import jwt from "jsonwebtoken";
 
 import ClientAdminLayout from "./ClientAdminLayout";
@@ -20,13 +19,14 @@ export default async function AdminLayout({ children }: { children: ReactNode })
       }
       jwt.verify(token, secret);
       isValid = true;
+      console.log("[AdminLayout] Valid token detected");
     } catch (err) {
       console.log("[AdminLayout] Invalid/expired token:", err);
     }
   }
 
   if (!token) {
-    return redirect("/signin");
+    return window.location.href = "/signin";
   }
 
   return (
