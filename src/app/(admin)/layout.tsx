@@ -1,7 +1,7 @@
 import { ReactNode } from "react";
 import { cookies } from "next/headers";
 import jwt from "jsonwebtoken";
-
+import { redirect } from "next/navigation";
 import ClientAdminLayout from "./ClientAdminLayout";
 import TokenRefresher from "@/components/auth/TokenRefresher";
 
@@ -26,7 +26,7 @@ export default async function AdminLayout({ children }: { children: ReactNode })
   }
 
   if (!token) {
-    return window.location.href = "/signin";
+    return redirect("/signin");
   }
 
   return (

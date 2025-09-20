@@ -14,6 +14,7 @@ export default async function SignInPage() {
   const cookieStore = await cookies();
   const token = cookieStore.get("token")?.value;
   const isValid = false;
+  console.log("SignInPage - token:", token);
 
   if (token) {
     try {
