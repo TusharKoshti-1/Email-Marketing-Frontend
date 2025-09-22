@@ -8,8 +8,8 @@ interface ButtonProps {
   endIcon?: ReactNode; // Icon after the text
   onClick?: () => void; // Click handler
   disabled?: boolean; // Disabled state
-  className?: string;
-  type?: 'button' | 'submit' | 'reset'; // Disabled state
+  className?: string; // Custom classes
+  type?: "button" | "submit" | "reset"; // Add type prop for HTML button
 }
 
 const Button: React.FC<ButtonProps> = ({
@@ -21,6 +21,7 @@ const Button: React.FC<ButtonProps> = ({
   onClick,
   className = "",
   disabled = false,
+  type = "button", // Default to "button"
 }) => {
   // Size Classes
   const sizeClasses = {
@@ -38,6 +39,7 @@ const Button: React.FC<ButtonProps> = ({
 
   return (
     <button
+      type={type} // Pass type prop to HTML button
       className={`inline-flex items-center justify-center font-medium gap-2 rounded-lg transition ${className} ${
         sizeClasses[size]
       } ${variantClasses[variant]} ${
