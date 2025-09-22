@@ -34,7 +34,7 @@ export default function SignInForm() {
       console.log("✅ Login Success:", data);
 
       // Redirect to dashboard
-      window.location.href = "/";
+      // window.location.href = "/";
     } catch (err) {
       console.error("❌ Login Failed:", err);
       alert("Login failed. Please check your credentials.");
