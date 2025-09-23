@@ -1,5 +1,6 @@
 "use client";
 import React, { useState, ChangeEvent } from "react";
+import dynamic from "next/dynamic";
 import { useModal } from "../../hooks/useModal";
 import { Modal } from "../ui/modal";
 import Button from "../ui/button/Button";
@@ -8,6 +9,10 @@ import Label from "../form/Label";
 import { Dropdown } from "../ui/dropdown/Dropdown";
 import { DropdownItem } from "../ui/dropdown/DropdownItem";
 import { ChevronDownIcon } from "../../icons";
+
+// Lazy-load Quill (to avoid SSR issues in Next.js)
+const ReactQuill = dynamic(() => import("react-quill-new"), { ssr: false });
+import "react-quill/dist/quill.snow.css";
 
 interface EmailTemplate {
   id: number;
@@ -37,7 +42,7 @@ export default function EmailTemplatesPage() {
   const [openDropdown, setOpenDropdown] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  // Handle adding a new template
+  // Add Template
   const handleAddTemplate = () => {
     if (!newTemplate.name || !newTemplate.content) {
       setError("Template name and content are required");
@@ -50,22 +55,17 @@ export default function EmailTemplatesPage() {
     const newId = templates.length > 0 ? Math.max(...templates.map((t) => t.id)) + 1 : 1;
     setTemplates([
       ...templates,
-      {
-        id: newId,
-        name: newTemplate.name,
-        content: newTemplate.content,
-        status: "Draft",
-      },
+      { id: newId, name: newTemplate.name, content: newTemplate.content, status: "Draft" },
     ]);
     setNewTemplate({ name: "", content: "" });
     setError(null);
     closeModal();
   };
 
-  // Handle editing a template
+  // Edit Template
   const handleEditSubmit = () => {
     if (!editingTemplate || !newTemplate.name || !newTemplate.content) {
-      setError("No template selected or empty name/content");
+      setError("No template selected or empty fields");
       return;
     }
     if (templates.find((t) => t.name === newTemplate.name && t.id !== editingTemplate.id)) {
@@ -74,9 +74,7 @@ export default function EmailTemplatesPage() {
     }
     setTemplates(
       templates.map((t) =>
-        t.id === editingTemplate.id
-          ? { ...t, name: newTemplate.name, content: newTemplate.content }
-          : t
+        t.id === editingTemplate.id ? { ...t, name: newTemplate.name, content: newTemplate.content } : t
       )
     );
     setNewTemplate({ name: "", content: "" });
@@ -85,7 +83,6 @@ export default function EmailTemplatesPage() {
     closeModal();
   };
 
-  // Handle edit action
   const handleEdit = (index: number) => {
     const template = templates[index];
     setEditingTemplate(template);
@@ -94,25 +91,18 @@ export default function EmailTemplatesPage() {
     setOpenDropdown(null);
   };
 
-  // Handle delete action
   const handleDelete = (index: number) => {
     setTemplates(templates.filter((_, i) => i !== index));
     setOpenDropdown(null);
   };
 
-  // Handle toggle status (Draft/Published)
   const handleToggleStatus = (index: number) => {
     const template = templates[index];
     const newStatus = template.status === "Draft" ? "Published" : "Draft";
-    setTemplates(
-      templates.map((t, i) =>
-        i === index ? { ...t, status: newStatus } : t
-      )
-    );
+    setTemplates(templates.map((t, i) => (i === index ? { ...t, status: newStatus } : t)));
     setOpenDropdown(null);
   };
 
-  // Handle modal close
   const handleModalClose = () => {
     setNewTemplate({ name: "", content: "" });
     setEditingTemplate(null);
@@ -125,15 +115,11 @@ export default function EmailTemplatesPage() {
       <div className="p-5 border border-gray-200 rounded-2xl dark:border-gray-800 lg:p-6">
         <div className="flex flex-col gap-5">
           <div className="flex items-center justify-between">
-            <h3 className="text-xl font-semibold text-gray-800 dark:text-white/90">
-              Email Templates
-            </h3>
+            <h3 className="text-xl font-semibold text-gray-800 dark:text-white/90">Email Templates</h3>
             <Button onClick={openModal}>+ Add Template</Button>
           </div>
 
-          {error && (
-            <div className="text-red-600 dark:text-red-400">{error}</div>
-          )}
+          {error && <div className="text-red-600 dark:text-red-400">{error}</div>}
 
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {templates.map((template, index) => (
@@ -142,18 +128,16 @@ export default function EmailTemplatesPage() {
                 className="flex flex-col justify-between border border-gray-200 dark:border-gray-700 rounded-xl p-4 bg-white dark:bg-gray-800 shadow-sm relative"
               >
                 <div>
-                  <span className="text-gray-800 dark:text-gray-200 block font-medium">
-                    {template.name}
-                  </span>
-                  <span className="text-sm text-gray-500 dark:text-gray-400 block truncate max-w-[200px]">
-                    {template.content.substring(0, 50)}...
-                  </span>
+                  <span className="text-gray-800 dark:text-gray-200 block font-medium">{template.name}</span>
+                  <div
+                    className="text-sm text-gray-500 dark:text-gray-400 block truncate max-w-[200px]"
+                    dangerouslySetInnerHTML={{ __html: template.content.substring(0, 60) + "..." }}
+                  />
                   <span
-                    className={`px-2 py-1 text-xs font-medium rounded-full mt-2 ${
-                      template.status === "Published"
+                    className={`px-2 py-1 text-xs font-medium rounded-full mt-2 ${template.status === "Published"
                         ? "bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300"
                         : "bg-yellow-100 text-yellow-700 dark:bg-yellow-900 dark:text-yellow-300"
-                    }`}
+                      }`}
                   >
                     {template.status}
                   </span>
@@ -162,33 +146,15 @@ export default function EmailTemplatesPage() {
                 <div className="relative mt-2">
                   <button
                     className="dropdown-toggle flex items-center text-gray-600 hover:text-gray-900 dark:text-gray-300 dark:hover:text-white"
-                    onClick={() =>
-                      setOpenDropdown(openDropdown === index ? null : index)
-                    }
+                    onClick={() => setOpenDropdown(openDropdown === index ? null : index)}
                   >
                     <ChevronDownIcon className="w-5 h-5" />
                   </button>
 
-                  <Dropdown
-                    isOpen={openDropdown === index}
-                    onClose={() => setOpenDropdown(null)}
-                  >
-                    <DropdownItem
-                      onClick={() => handleEdit(index)}
-                      className="text-gray-800 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700"
-                    >
-                      Edit
-                    </DropdownItem>
-                    <DropdownItem
-                      onClick={() => handleDelete(index)}
-                      className="text-gray-800 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700"
-                    >
-                      Delete
-                    </DropdownItem>
-                    <DropdownItem
-                      onClick={() => handleToggleStatus(index)}
-                      className="text-gray-800 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700"
-                    >
+                  <Dropdown isOpen={openDropdown === index} onClose={() => setOpenDropdown(null)}>
+                    <DropdownItem onClick={() => handleEdit(index)}>Edit</DropdownItem>
+                    <DropdownItem onClick={() => handleDelete(index)}>Delete</DropdownItem>
+                    <DropdownItem onClick={() => handleToggleStatus(index)}>
                       {template.status === "Draft" ? "Publish" : "Unpublish"}
                     </DropdownItem>
                   </Dropdown>
@@ -199,15 +165,14 @@ export default function EmailTemplatesPage() {
         </div>
       </div>
 
-      <Modal isOpen={isOpen} onClose={handleModalClose} className="max-w-[500px] m-4">
-        <div className="no-scrollbar relative w-full max-w-[500px] rounded-3xl bg-white p-6 dark:bg-gray-900">
+      {/* Modal for Create/Edit Template */}
+      <Modal isOpen={isOpen} onClose={handleModalClose} className="max-w-[800px] m-4">
+        <div className="relative w-full max-w-[800px] rounded-3xl bg-white p-6 dark:bg-gray-900">
           <h4 className="mb-2 text-2xl font-semibold text-gray-800 dark:text-white/90">
             {editingTemplate ? "Edit Template" : "Add New Template"}
           </h4>
           <p className="mb-6 text-sm text-gray-500 dark:text-gray-400">
-            {editingTemplate
-              ? "Edit the email template for sending campaigns."
-              : "Create a new email template for sending campaigns."}
+            {editingTemplate ? "Edit the email template." : "Create a new email template."}
           </p>
 
           <form
@@ -233,15 +198,22 @@ export default function EmailTemplatesPage() {
             </div>
             <div className="mb-5">
               <Label>Template Content</Label>
-              <Input
-                type="text"
-                placeholder="Enter template content (e.g., HTML or text)"
-                defaultValue={newTemplate.content}
-                onChange={(e: ChangeEvent<HTMLInputElement>) =>
-                  setNewTemplate({ ...newTemplate, content: e.target.value })
-                }
+              <ReactQuill
+                theme="snow"
+                value={newTemplate.content}
+                onChange={(content) => setNewTemplate({ ...newTemplate, content })}
+                className="h-40 mb-10"
               />
             </div>
+
+            {/* Live Preview */}
+            {newTemplate.content && (
+              <div className="border rounded-lg p-3 bg-gray-50 dark:bg-gray-800 mb-6">
+                <h5 className="text-sm font-semibold mb-2">Live Preview</h5>
+                <div dangerouslySetInnerHTML={{ __html: newTemplate.content }} />
+              </div>
+            )}
+
             <div className="flex items-center gap-3 justify-end">
               <Button size="sm" variant="outline" onClick={handleModalClose}>
                 Cancel
