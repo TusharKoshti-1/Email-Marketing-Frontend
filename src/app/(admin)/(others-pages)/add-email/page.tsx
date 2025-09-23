@@ -2,7 +2,6 @@ import PageBreadcrumb from "@/components/common/PageBreadCrumb";
 import { Metadata } from "next";
 import React from "react";
 import AddEmailPage from "@/components/add-email/AddEmailPage";
-import { cookies } from "next/headers";
 
 
 export const metadata: Metadata = {
@@ -11,8 +10,7 @@ export const metadata: Metadata = {
 };
 
 export default async function Sender() {
-    const cookieStore = await cookies();
-    const token = cookieStore.get("token")?.value;
+    const token = localStorage.get("token")?.value;
   return (
     <div>
       <PageBreadcrumb pageTitle="Sender" />

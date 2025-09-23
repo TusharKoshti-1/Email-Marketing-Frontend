@@ -7,25 +7,21 @@ import { ChevronLeftIcon, EyeCloseIcon, EyeIcon } from "@/icons";
 import Link from "next/link";
 import React, { useState, ChangeEvent, FormEvent } from "react";
 
-// Define prop types for Input and Button components
-
+// Define prop interfa
 export default function SignInForm() {
   const [showPassword, setShowPassword] = useState(false);
   const [isChecked, setIsChecked] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
-  const API_URL = process.env.NEXT_PUBLIC_API_URL;
-
-  const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
 
     try {
-      const res = await fetch(`${API_URL}/api/auth/login`, {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/auth/login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, password }),
-        credentials: "include", // Include cookies in the request
       });
 
       if (!res.ok) throw new Error("Invalid credentials");
@@ -33,7 +29,10 @@ export default function SignInForm() {
       const data = await res.json();
       console.log("✅ Login Success:", data);
 
-      // Redirect to dashboard
+      // Save token to localStorage/sessionStorage
+      localStorage.setItem("token", data.access_token);
+
+      // Redirect (example)
       window.location.href = "/";
     } catch (err) {
       console.error("❌ Login Failed:", err);
