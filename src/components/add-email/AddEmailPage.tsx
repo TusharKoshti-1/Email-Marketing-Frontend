@@ -23,9 +23,13 @@ export default function AddEmailPage() {
   const [editingDomain, setEditingDomain] = useState<Domain | null>(null);
   const [openDropdown, setOpenDropdown] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [token, setToken] = useState<string | null>(null);
 
-  const token = localStorage.get("token")?.value;
-
+  // Fetch token from localStorage after component mounts
+  useEffect(() => {
+    const storedToken = localStorage.getItem("token");
+    setToken(storedToken);
+  }, []);
 
   // Memoize headers to stabilize useCallback dependency
   const headers = useMemo(
@@ -38,6 +42,10 @@ export default function AddEmailPage() {
 
   // Define fetchDomains with useCallback
   const fetchDomains = useCallback(async () => {
+    if (!token) {
+      setError("Please log in to view domains");
+      return;
+    }
     try {
       const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/domains`, { headers });
       if (!res.ok) {
@@ -51,15 +59,15 @@ export default function AddEmailPage() {
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "An unknown error occurred");
     }
-  }, [headers]);
+  }, [headers, token]);
 
-  // Fetch domains on mount
+  // Fetch domains when token changes
   useEffect(() => {
-    if (!token) {
+    if (token) {
+      fetchDomains();
+    } else {
       setError("Please log in to view domains");
-      return;
     }
-    fetchDomains();
   }, [token, fetchDomains]);
 
   const handleAddDomain = async () => {
@@ -219,7 +227,6 @@ export default function AddEmailPage() {
                   </span>
                 </div>
 
-                {/* Dropdown */}
                 <div className="relative">
                   <button
                     className="dropdown-toggle flex items-center text-gray-600 hover:text-gray-900 dark:text-gray-300 dark:hover:text-white"
@@ -260,7 +267,6 @@ export default function AddEmailPage() {
         </div>
       </div>
 
-      {/* Add/Edit Domain Modal */}
       <Modal isOpen={isOpen} onClose={handleModalClose} className="max-w-[500px] m-4">
         <div className="no-scrollbar relative w-full max-w-[500px] rounded-3xl bg-white p-6 dark:bg-gray-900">
           <h4 className="mb-2 text-2xl font-semibold text-gray-800 dark:text-white/90">
