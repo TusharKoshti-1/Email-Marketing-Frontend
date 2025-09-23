@@ -10,11 +10,10 @@ export const metadata: Metadata = {
 };
 
 export default async function Sender() {
-    const token = localStorage.get("token")?.value;
   return (
     <div>
       <PageBreadcrumb pageTitle="Sender" />
-      <AddEmailPage token={token} />      
+      <AddEmailPage />      
     </div>
   );
 }

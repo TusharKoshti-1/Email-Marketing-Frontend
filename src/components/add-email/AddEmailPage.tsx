@@ -16,17 +16,16 @@ interface Domain {
   userId: number;
 }
 
-interface AddEmailPageProps {
-  token: string | undefined;
-}
-
-export default function AddEmailPage({ token }: AddEmailPageProps) {
+export default function AddEmailPage() {
   const { isOpen, openModal, closeModal } = useModal();
   const [domains, setDomains] = useState<Domain[]>([]);
   const [newDomain, setNewDomain] = useState("");
   const [editingDomain, setEditingDomain] = useState<Domain | null>(null);
   const [openDropdown, setOpenDropdown] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
+
+  const token = localStorage.get("token")?.value;
+
 
   // Memoize headers to stabilize useCallback dependency
   const headers = useMemo(
