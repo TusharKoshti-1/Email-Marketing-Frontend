@@ -30,7 +30,7 @@ export default function SignInForm() {
       console.log("✅ Login Success:", data);
 
       // Save token to localStorage/sessionStorage
-      localStorage.setItem("token", data.access_token);
+      localStorage.setItem("token", data.token);
 
       // Redirect (example)
       window.location.href = "/";
