@@ -1,5 +1,5 @@
 "use client";
-import React, { useState, useEffect, useCallback, useMemo, ChangeEvent } from "react";
+import React, { useState, ChangeEvent } from "react";
 import { useModal } from "../../hooks/useModal";
 import { Modal } from "../ui/modal";
 import Button from "../ui/button/Button";
@@ -18,122 +18,71 @@ interface EmailTemplate {
 
 export default function EmailTemplatesPage() {
   const { isOpen, openModal, closeModal } = useModal();
-  const [templates, setTemplates] = useState<EmailTemplate[]>([]);
+  const [templates, setTemplates] = useState<EmailTemplate[]>([
+    {
+      id: 1,
+      name: "Welcome Email",
+      content: "<h1>Welcome to our platform!</h1><p>Thank you for signing up.</p>",
+      status: "Published",
+    },
+    {
+      id: 2,
+      name: "Newsletter",
+      content: "<h2>Monthly Updates</h2><p>Here’s what’s new...</p>",
+      status: "Draft",
+    },
+  ]);
   const [newTemplate, setNewTemplate] = useState({ name: "", content: "" });
   const [editingTemplate, setEditingTemplate] = useState<EmailTemplate | null>(null);
   const [openDropdown, setOpenDropdown] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [token, setToken] = useState<string | null>(null);
-
-  // Fetch token from localStorage after component mounts
-  useEffect(() => {
-    const storedToken = localStorage.getItem("token");
-    setToken(storedToken);
-  }, []);
-
-  // Memoize headers for API calls
-  const headers = useMemo(
-    () => ({
-      Authorization: `Bearer ${token}`,
-      "Content-Type": "application/json",
-    }),
-    [token]
-  );
-
-  // Fetch templates (placeholder for API call)
-  const fetchTemplates = useCallback(async () => {
-    if (!token) {
-      setError("Please log in to view templates");
-      return;
-    }
-    try {
-      // Placeholder: Replace with actual API call
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/templates`, { headers });
-      if (!res.ok) {
-        if (res.status === 401) throw new Error("Unauthorized: Please log in again");
-        const errorData = await res.json();
-        throw new Error(errorData.message || "Failed to fetch templates");
-      }
-      const data = await res.json();
-      setTemplates(data);
-      setError(null);
-    } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : "An unknown error occurred");
-    }
-  }, [headers, token]);
-
-  // Fetch templates when token changes
-  useEffect(() => {
-    if (token) {
-      fetchTemplates();
-    } else {
-      setError("Please log in to view templates");
-    }
-  }, [token, fetchTemplates]);
 
   // Handle adding a new template
-  const handleAddTemplate = async () => {
-    if (!token) {
-      setError("Please log in to add a template");
+  const handleAddTemplate = () => {
+    if (!newTemplate.name || !newTemplate.content) {
+      setError("Template name and content are required");
       return;
     }
-    if (newTemplate.name && newTemplate.content && !templates.find((t) => t.name === newTemplate.name)) {
-      try {
-        // Placeholder: Replace with actual API call
-        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/templates`, {
-          method: "POST",
-          headers,
-          body: JSON.stringify(newTemplate),
-        });
-        if (!res.ok) {
-          if (res.status === 401) throw new Error("Unauthorized: Please log in again");
-          const errorData = await res.json();
-          throw new Error(errorData.message || "Failed to create template");
-        }
-        const template = await res.json();
-        setTemplates([...templates, template]);
-        setNewTemplate({ name: "", content: "" });
-        setError(null);
-        closeModal();
-      } catch (err: unknown) {
-        setError(err instanceof Error ? err.message : "An unknown error occurred");
-      }
-    } else {
-      setError("Template name and content are required, and name must be unique");
+    if (templates.find((t) => t.name === newTemplate.name)) {
+      setError("Template name must be unique");
+      return;
     }
+    const newId = templates.length > 0 ? Math.max(...templates.map((t) => t.id)) + 1 : 1;
+    setTemplates([
+      ...templates,
+      {
+        id: newId,
+        name: newTemplate.name,
+        content: newTemplate.content,
+        status: "Draft",
+      },
+    ]);
+    setNewTemplate({ name: "", content: "" });
+    setError(null);
+    closeModal();
   };
 
   // Handle editing a template
-  const handleEditSubmit = async () => {
-    if (!token) {
-      setError("Please log in to edit a template");
-      return;
-    }
+  const handleEditSubmit = () => {
     if (!editingTemplate || !newTemplate.name || !newTemplate.content) {
       setError("No template selected or empty name/content");
       return;
     }
-    try {
-      // Placeholder: Replace with actual API call
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/templates/${editingTemplate.id}`, {
-        method: "PUT",
-        headers,
-        body: JSON.stringify(newTemplate),
-      });
-      if (!res.ok) {
-        if (res.status === 401) throw new Error("Unauthorized: Please log in again");
-        const errorData = await res.json();
-        throw new Error(errorData.message || "Failed to update template");
-      }
-      const updatedTemplate = await res.json();
-      setTemplates(templates.map((t) => (t.id === editingTemplate.id ? updatedTemplate : t)));
-      setNewTemplate({ name: "", content: "" });
-      setEditingTemplate(null);
-      setError(null);
-      closeModal();
-    } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : "An unknown error occurred");
+    if (templates.find((t) => t.name === newTemplate.name && t.id !== editingTemplate.id)) {
+      setError("Template name must be unique");
+      return;
     }
+    setTemplates(
+      templates.map((t) =>
+        t.id === editingTemplate.id
+          ? { ...t, name: newTemplate.name, content: newTemplate.content }
+          : t
+      )
+    );
+    setNewTemplate({ name: "", content: "" });
+    setEditingTemplate(null);
+    setError(null);
+    closeModal();
   };
 
   // Handle edit action
@@ -146,64 +95,28 @@ export default function EmailTemplatesPage() {
   };
 
   // Handle delete action
-  const handleDelete = async (index: number) => {
-    if (!token) {
-      setError("Please log in to delete a template");
-      return;
-    }
-    const template = templates[index];
-    try {
-      // Placeholder: Replace with actual API call
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/templates/${template.id}`, {
-        method: "DELETE",
-        headers,
-      });
-      if (!res.ok) {
-        if (res.status === 401) throw new Error("Unauthorized: Please log in again");
-        const errorData = await res.json();
-        throw new Error(errorData.message || "Failed to delete template");
-      }
-      setTemplates(templates.filter((_, i) => i !== index));
-      setError(null);
-      setOpenDropdown(null);
-    } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : "An unknown error occurred");
-    }
+  const handleDelete = (index: number) => {
+    setTemplates(templates.filter((_, i) => i !== index));
+    setOpenDropdown(null);
   };
 
   // Handle toggle status (Draft/Published)
-  const handleToggleStatus = async (index: number) => {
-    if (!token) {
-      setError("Please log in to change template status");
-      return;
-    }
+  const handleToggleStatus = (index: number) => {
     const template = templates[index];
     const newStatus = template.status === "Draft" ? "Published" : "Draft";
-    try {
-      // Placeholder: Replace with actual API call
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/templates/${template.id}/status`, {
-        method: "PATCH",
-        headers,
-        body: JSON.stringify({ status: newStatus }),
-      });
-      if (!res.ok) {
-        if (res.status === 401) throw new Error("Unauthorized: Please log in again");
-        const errorData = await res.json();
-        throw new Error(errorData.message || "Failed to update template status");
-      }
-      const updatedTemplate = await res.json();
-      setTemplates(templates.map((t, i) => (i === index ? updatedTemplate : t)));
-      setError(null);
-      setOpenDropdown(null);
-    } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : "An unknown error occurred");
-    }
+    setTemplates(
+      templates.map((t, i) =>
+        i === index ? { ...t, status: newStatus } : t
+      )
+    );
+    setOpenDropdown(null);
   };
 
   // Handle modal close
   const handleModalClose = () => {
     setNewTemplate({ name: "", content: "" });
     setEditingTemplate(null);
+    setError(null);
     closeModal();
   };
 

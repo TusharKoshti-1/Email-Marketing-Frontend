@@ -9,10 +9,10 @@ export const metadata: Metadata = {
   description: "This is Next.js Blank Page TailAdmin Dashboard Template",
 };
 
-export default async function Sender() {
+export default async function AddEmail() {
   return (
     <div>
-      <PageBreadcrumb pageTitle="Sender" />
+      <PageBreadcrumb pageTitle="Add Email" />
       <AddEmailPage />      
     </div>
   );
